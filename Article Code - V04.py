@@ -53,7 +53,7 @@ BOUNDS = {
     "A":   (0.8, 12.0),   # m^2 adsorber area
     "A_pv":(4.0, 30.0),   # m^2 PV area
     "T_h": (355.0, 395.0),# K regeneration temp
-    "tau": (100.0, 700)# s cycle time
+    "tau": (100.0, 700)   # s cycle time
 }
 
 # ================================================================
@@ -198,6 +198,52 @@ def build_physics_dataset(n=6000, seed=42):
 
 print("\n[ANN] Building dataset from physics (teacher V03)...")
 X_all, Y_all = build_physics_dataset(n=6000, seed=42)
+
+# --------------------- 2.1) DATASET INSPECTION & PLOTS (ADDED) ---------------------
+print("\n[DATA] X_all shape:", X_all.shape, "| Y_all shape:", Y_all.shape)
+print("[DATA] Feature order: [A, A_pv, T_h, tau]")
+print("[DATA] Target order : [Qe, COP_th]")
+
+np.set_printoptions(precision=4, suppress=True)
+print("\n[DATA] X_all head:\n", X_all[:5])
+print("\n[DATA] Y_all head:\n", Y_all[:5])
+
+# Save full dataset to CSV for offline inspection
+pd.DataFrame(X_all, columns=["A","A_pv","T_h","tau"]).to_csv("X_all.csv", index=False)
+pd.DataFrame(Y_all, columns=["Qe","COP_th"]).to_csv("Y_all.csv", index=False)
+print("\n[DATA] Saved CSVs: X_all.csv, Y_all.csv")
+
+# Downsample for faster plotting if needed
+def _downsample_idx(n_total, n_show=3000, seed=42):
+    if n_total <= n_show:
+        return np.arange(n_total)
+    rng = np.random.default_rng(seed)
+    return rng.choice(n_total, size=n_show, replace=False)
+
+_idx = _downsample_idx(len(X_all), n_show=3000)
+Xv, Yv = X_all[_idx], Y_all[_idx]
+
+# Targets: Qe vs COP_th
+plt.figure(figsize=(7,5))
+plt.scatter(Yv[:,0], Yv[:,1], s=10, alpha=0.6, edgecolors="none")
+plt.xlabel("Qe [W]"); plt.ylabel("COP_th [-]")
+plt.title("Targets: Qe vs COP_th")
+plt.grid(True, linestyle="--", alpha=0.5)
+plt.tight_layout(); plt.show()
+
+# Feature → Target relationships
+fig, axs = plt.subplots(2, 2, figsize=(12,9))
+axs[0,0].scatter(Xv[:,0], Yv[:,0], s=10, alpha=0.6, edgecolors="none")
+axs[0,0].set_xlabel("A [m^2]"); axs[0,0].set_ylabel("Qe [W]"); axs[0,0].set_title("A vs Qe"); axs[0,0].grid(True, linestyle="--", alpha=0.5)
+axs[0,1].scatter(Xv[:,1], Yv[:,0], s=10, alpha=0.6, edgecolors="none")
+axs[0,1].set_xlabel("A_pv [m^2]"); axs[0,1].set_ylabel("Qe [W]"); axs[0,1].set_title("A_pv vs Qe"); axs[0,1].grid(True, linestyle="--", alpha=0.5)
+axs[1,0].scatter(Xv[:,2], Yv[:,1], s=10, alpha=0.6, edgecolors="none")
+axs[1,0].set_xlabel("T_h [K]"); axs[1,0].set_ylabel("COP_th [-]"); axs[1,0].set_title("T_h vs COP_th"); axs[1,0].grid(True, linestyle="--", alpha=0.5)
+axs[1,1].scatter(Xv[:,3], Yv[:,0], s=10, alpha=0.6, edgecolors="none")
+axs[1,1].set_xlabel("tau [s]"); axs[1,1].set_ylabel("Qe [W]"); axs[1,1].set_title("tau vs Qe"); axs[1,1].grid(True, linestyle="--", alpha=0.5)
+plt.tight_layout(); plt.show()
+# -------------------------------------------------------------------------------
+
 X_tr, X_te, Y_tr, Y_te = train_test_split(X_all, Y_all, test_size=0.2, random_state=42)
 
 xscaler = StandardScaler().fit(X_tr)
@@ -361,8 +407,6 @@ mape_Ed  = _mape(ann_front_phys["E_dest_phys"],ann_front["E_dest"])
 mape_Ct  = _mape(ann_front_phys["C_total_phys"],ann_front["C_total"])
 print(f"[ANN vs PHYS] MAPE  Qe: {mape_Qe:.2f}% | COP: {mape_COP:.2f}% | "
       f"E_dest: {mape_Ed:.2f}% | C_total: {mape_Ct:.2f}%")
-
-#ann_front = ann_front.iloc[1:].reset_index(drop=True)
 
 # ================================================================
 # >>> Convergence logging (ADDED without changing your GA settings)

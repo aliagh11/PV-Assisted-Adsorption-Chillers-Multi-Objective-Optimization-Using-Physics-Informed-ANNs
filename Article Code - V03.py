@@ -426,7 +426,7 @@ algorithm = NSGA2(
     eliminate_duplicates=True
 )
 
-termination = get_termination("n_gen", 25)
+termination = get_termination("n_gen", 50)
 
 problem     = AdsorptionMOProblem()
 cb_log      = LogCallback()
