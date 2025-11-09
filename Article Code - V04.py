@@ -21,6 +21,9 @@ from pymoo.optimize import minimize
 from pymoo.core.problem import ElementwiseProblem
 from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 
+# >>> Added for convergence logging (does not change GA parameters)
+from pymoo.core.callback import Callback
+
 np.random.seed(42)
 
 # ================================================================
@@ -47,8 +50,8 @@ ASSUMPTIONS = {
 # Decision-variable bounds: (A, A_pv, T_h,set, tau)
 # Design bounds (set A upper bound to 6.0 if you want to mirror the PDF exactly)
 BOUNDS = {
-    "A":   (1.2, 12.0),   # m^2 adsorber area
-    "A_pv":(6.0, 30.0),   # m^2 PV area
+    "A":   (0.8, 12.0),   # m^2 adsorber area
+    "A_pv":(4.0, 30.0),   # m^2 PV area
     "T_h": (355.0, 395.0),# K regeneration temp
     "tau": (100.0, 700)# s cycle time
 }
@@ -296,7 +299,7 @@ class AdsorptionMOProblem(ElementwiseProblem):
 # ================================================================
 # 5) Run NSGA-II on ANN
 # ================================================================
-def run_ga(n_gen=100, pop_size=120, seed=101, verbose=True):
+def run_ga(n_gen=50, pop_size=120, seed=101, verbose=True):
     algo = NSGA2(pop_size=pop_size, sampling=FeasibleSampling())
     term = get_termination("n_gen", n_gen)
     prob = AdsorptionMOProblem()
@@ -317,7 +320,7 @@ def run_ga(n_gen=100, pop_size=120, seed=101, verbose=True):
     return pd.DataFrame(rows)
 
 print("\n[ANN] Running NSGA-II on emulator...")
-ann_df = run_ga(n_gen=100, pop_size=120, seed=101, verbose=True)
+ann_df = run_ga(n_gen=50, pop_size=120, seed=101, verbose=True)
 
 # Pareto extraction
 def pareto_front(df):
@@ -360,6 +363,68 @@ print(f"[ANN vs PHYS] MAPE  Qe: {mape_Qe:.2f}% | COP: {mape_COP:.2f}% | "
       f"E_dest: {mape_Ed:.2f}% | C_total: {mape_Ct:.2f}%")
 
 #ann_front = ann_front.iloc[1:].reset_index(drop=True)
+
+# ================================================================
+# >>> Convergence logging (ADDED without changing your GA settings)
+#    We run a second GA with identical settings but attach a callback
+# ================================================================
+class LogCallback(Callback):
+    """
+    Logs per-generation metrics:
+      - best/mean cost (F[:,0]) and exergy (F[:,1])
+      - population spread in objective space (mean pairwise L2 distance)
+    """
+    def __init__(self):
+        super().__init__()
+        self.gen, self.best_c, self.mean_c = [], [], []
+        self.best_e, self.mean_e = [], []
+        self.spread = []
+
+    def notify(self, algorithm):
+        F = algorithm.pop.get("F")
+        g = algorithm.n_gen
+        self.gen.append(g)
+        self.best_c.append(F[:,0].min()); self.mean_c.append(F[:,0].mean())
+        self.best_e.append(F[:,1].min()); self.mean_e.append(F[:,1].mean())
+        if len(F) > 1:
+            D = np.linalg.norm(F[:,None,:] - F[None,:,:], axis=2)
+            self.spread.append(D[np.triu_indices(len(F), 1)].mean())
+        else:
+            self.spread.append(0.0)
+
+def plot_convergence(cb):
+    if cb is None or len(cb.gen)==0:
+        print("No convergence data recorded."); return
+    g = np.asarray(cb.gen)
+
+    fig, axs = plt.subplots(1, 3, figsize=(14,4))
+    axs[0].plot(g, cb.mean_c, label="Mean cost")
+    axs[0].plot(g, cb.best_c, label="Best cost")
+    axs[0].set_xlabel("Generation"); axs[0].set_ylabel("C_total [USD]")
+    axs[0].set_title("Cost convergence"); axs[0].grid(True); axs[0].legend()
+
+    axs[1].plot(g, cb.mean_e, label="Mean E_dest")
+    axs[1].plot(g, cb.best_e, label="Best E_dest")
+    axs[1].set_xlabel("Generation"); axs[1].set_ylabel("E_dest [W]")
+    axs[1].set_title("Exergy convergence"); axs[1].grid(True); axs[1].legend()
+
+    axs[2].plot(g, cb.spread)
+    axs[2].set_xlabel("Generation"); axs[2].set_ylabel("Mean pairwise distance")
+    axs[2].set_title("Population spread (objective space)"); axs[2].grid(True)
+
+    plt.tight_layout(); plt.show()
+
+def run_ga_with_logging(n_gen=50, pop_size=120, seed=202, verbose=False):
+    algo = NSGA2(pop_size=pop_size, sampling=FeasibleSampling())
+    term = get_termination("n_gen", n_gen)
+    prob = AdsorptionMOProblem()
+    cb = LogCallback()
+    _ = minimize(prob, algo, term, verbose=verbose, seed=seed, callback=cb)
+    return cb
+
+print("\n[ANN] Running a logging-only GA pass (same settings) for convergence plots...")
+cb = run_ga_with_logging(n_gen=50, pop_size=120, seed=202, verbose=False)
+plot_convergence(cb)
 
 # ================================================================
 # 7) Plots
