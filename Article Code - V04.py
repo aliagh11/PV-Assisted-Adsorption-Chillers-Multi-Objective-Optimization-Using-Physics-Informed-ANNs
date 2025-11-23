@@ -52,7 +52,7 @@ ASSUMPTIONS = {
 BOUNDS = {
     "A":   (0.8, 12.0),   # m^2 adsorber area
     "A_pv":(4.0, 30.0),   # m^2 PV area
-    "T_h": (355.0, 395.0),# K regeneration temp
+    "T_h": (355.0, 368.0),# K regeneration temp (82C - 95C)
     "tau": (100.0, 700)   # s cycle time
 }
 
@@ -62,7 +62,7 @@ BOUNDS = {
 # ================================================================
 PHYS = {
     "R": 8.314, "Mw": 0.018015,
-    "mb": 24.0, "cb": 850.0, "DeltaH_ads": 2.4e6,   # J/kg
+    "mb": 24.0, "cb": 2000.0, "DeltaH_ads": 2.4e6,   # J/kg
 
     # Toth (water/silica)
     "wmax": 0.18, "b0": 1.0e-4, "Qiso": 5.0e4, "toth_n": 0.6, "T_ref": 333.0,
@@ -251,7 +251,7 @@ yscaler = StandardScaler().fit(Y_tr)
 Xtr_s, Xte_s = xscaler.transform(X_tr), xscaler.transform(X_te)
 Ytr_s, Yte_s = yscaler.transform(Y_tr), yscaler.transform(Y_te)
 
-base = MLPRegressor(hidden_layer_sizes=(128,128),
+base = MLPRegressor(hidden_layer_sizes=(20,20),
                     activation="relu",
                     alpha=1e-4,
                     learning_rate_init=3e-3,

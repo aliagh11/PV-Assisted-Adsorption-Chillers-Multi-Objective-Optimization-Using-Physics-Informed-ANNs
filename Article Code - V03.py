@@ -58,7 +58,7 @@ ASSUMPTIONS = {
 BOUNDS = {
     "A":   (0.8, 12.0),   # m^2 adsorber area
     "A_pv":(4.0, 30.0),   # m^2 PV area
-    "T_h": (355.0, 395.0),# K regeneration temp
+    "T_h": (355.0, 368.0),# K regeneration temp (82C - 95C)
     "tau": (100.0, 700)   # s cycle time
 }
 
@@ -128,7 +128,7 @@ PHYS = {
 
     # Bed and thermal properties
     "mb": 18.0,                # kg silica gel per bed (tuned)
-    "cb": 850.0,               # J/kg-K effective bed specific heat
+    "cb": 4120.0,              # J/kg-K effective bed specific heat
     "DeltaH_ads": 2.4e6,       # J/kg adsorption heat (per kg of water)
 
     # Toth equilibrium (stronger loading at low T, low P)
