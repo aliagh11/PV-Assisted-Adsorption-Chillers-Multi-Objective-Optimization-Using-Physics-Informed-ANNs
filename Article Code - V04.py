@@ -226,8 +226,8 @@ Xv, Yv = X_all[_idx], Y_all[_idx]
 # Targets: Qe vs COP_th
 plt.figure(figsize=(7,5))
 plt.scatter(Yv[:,0], Yv[:,1], s=10, alpha=0.6, edgecolors="none")
-plt.xlabel("Qe [W]"); plt.ylabel("COP_th [-]")
-plt.title("Targets: Qe vs COP_th")
+plt.xlabel("Qe [W]"); plt.ylabel("COP [-]")
+plt.title("Targets: Qe vs COP")
 plt.grid(True, linestyle="--", alpha=0.5)
 plt.tight_layout(); plt.show()
 
@@ -238,7 +238,7 @@ axs[0,0].set_xlabel("A [m^2]"); axs[0,0].set_ylabel("Qe [W]"); axs[0,0].set_titl
 axs[0,1].scatter(Xv[:,1], Yv[:,0], s=10, alpha=0.6, edgecolors="none")
 axs[0,1].set_xlabel("A_pv [m^2]"); axs[0,1].set_ylabel("Qe [W]"); axs[0,1].set_title("A_pv vs Qe"); axs[0,1].grid(True, linestyle="--", alpha=0.5)
 axs[1,0].scatter(Xv[:,2], Yv[:,1], s=10, alpha=0.6, edgecolors="none")
-axs[1,0].set_xlabel("T_h [K]"); axs[1,0].set_ylabel("COP_th [-]"); axs[1,0].set_title("T_h vs COP_th"); axs[1,0].grid(True, linestyle="--", alpha=0.5)
+axs[1,0].set_xlabel("T_h [K]"); axs[1,0].set_ylabel("COP [-]"); axs[1,0].set_title("T_h vs COP"); axs[1,0].grid(True, linestyle="--", alpha=0.5)
 axs[1,1].scatter(Xv[:,3], Yv[:,0], s=10, alpha=0.6, edgecolors="none")
 axs[1,1].set_xlabel("tau [s]"); axs[1,1].set_ylabel("Qe [W]"); axs[1,1].set_title("tau vs Qe"); axs[1,1].grid(True, linestyle="--", alpha=0.5)
 plt.tight_layout(); plt.show()

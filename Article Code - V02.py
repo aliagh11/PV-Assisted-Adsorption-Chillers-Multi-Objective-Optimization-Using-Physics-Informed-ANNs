@@ -436,6 +436,10 @@ plt.ylabel("Exergy Destruction  E_dest  [W]")
 plt.title("Final NSGA-II Population (green = feasible, red = infeasible)")
 plt.grid(True); plt.tight_layout(); plt.show()
 
+merged_df = pd.concat([pop_df["C_total"], pop_df["E_dest"]], axis=1)
+merged_df.head()
+merged_df.to_csv("merged_df.csv", index=False)
+
 # ---- Convergence plots (ADDED) ----
 plot_convergence(cb)
 
@@ -492,6 +496,6 @@ print("\n=== SURROGATE MODEL — OPTIMAL DESIGNS ===")
 print(f"Feasible points: {len(feas_only)} | Pareto points: {len(front)}")
 print(summary_table.to_string())
 
-front.to_csv("surrogate_pareto_front.csv", index=False)
+front.to_csv("surrogate_pareto_front.csv", index=True)
 print("\nSaved: surrogate_pareto_front.csv")
 # ==================== END FINAL SURROGATE SUMMARY ==========================

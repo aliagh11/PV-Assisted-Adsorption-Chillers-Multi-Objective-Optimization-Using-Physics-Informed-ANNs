@@ -651,12 +651,35 @@ plt.xlabel("Time [s]"); plt.ylabel("Mass Flow Rate  $\\dot{m}(t)$ [kg/s]")
 plt.title("Instantaneous Vapor Mass Flow")
 plt.grid(True); plt.tight_layout(); plt.show()
 
+# Create a DataFrame with time and mdot values
+df_mdot = pd.DataFrame({
+    "time_s": t,
+    "mdot_kg_s": mdot_t
+})
+
+# Save to Excel
+df_mdot.to_excel("mdott.xlsx", index=False)
+
+print("Saved file: mdot_t.xlsx")
+
+
 # ---- PLOT: Qe(t)
 plt.figure(figsize=(7,4))
 plt.plot(t, Qe_t, lw=2, color='tab:blue')
 plt.xlabel("Time [s]"); plt.ylabel("Cooling Power  $\\dot{Q}_e(t)$ [W]")
 plt.title("Instantaneous Cooling Power (Adsorption Phase)")
 plt.grid(True); plt.tight_layout(); plt.show()
+
+# Create a DataFrame with time and Qdote values
+df_qdote = pd.DataFrame({
+    "time_s": t,
+    "q_dot_e": Qe_t
+})
+
+# Save to Excel
+df_qdote.to_excel("qdote.xlsx", index=False)
+
+print("Saved file: qdote.xlsx")
 
 # ---- PLOT: Qdes(t)
 plt.figure(figsize=(7,4))
@@ -665,6 +688,17 @@ plt.xlabel("Time [s]"); plt.ylabel("Desorption Heat Rate  $\\dot{Q}_{des}(t)$ [W
 plt.title("Instantaneous Desorption Heat Input (Desorption Phase)")
 plt.grid(True); plt.tight_layout(); plt.show()
 
+# Create a DataFrame with time and Qdes values
+df_qdes = pd.DataFrame({
+    "time_s": t,
+    "q_dot_e": Qdes_t
+})
+
+# Save to Excel
+df_qdes.to_excel("qdes.xlsx", index=False)
+
+print("Saved file: qdes.xlsx")
+
 # ---- PLOT: Water uptake w(t) as weight percent (kg/kg × 100)
 plt.figure(figsize=(7,4))
 plt.plot(t, 100.0 * w_t, lw=2, color='tab:green')
@@ -672,3 +706,14 @@ plt.axvline(tau_k/2, color='k', ls='--', lw=1, alpha=0.7)
 plt.xlabel("Time [s]"); plt.ylabel("Water uptake  $w(t)$  [% of dry silica]")
 plt.title("Adsorbed Water in Silica Gel Over One Cycle")
 plt.grid(True); plt.tight_layout(); plt.show()
+
+# Create a DataFrame with time and w(t)% values
+df_wpercentage = pd.DataFrame({
+    "time_s": t,
+    "q_dot_e": w_t
+})
+
+# Save to Excel
+df_wpercentage.to_excel("wpercentage.xlsx", index=False)
+
+print("Saved file: wpercentage.xlsx")
