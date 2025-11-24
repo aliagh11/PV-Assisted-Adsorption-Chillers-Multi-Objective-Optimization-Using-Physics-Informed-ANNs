@@ -12,6 +12,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPRegressor
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.metrics import r2_score
+from sklearn.metrics import mean_squared_error  # <--- ADDED
 
 # ---- pymoo (NSGA-II)
 from pymoo.algorithms.moo.nsga2 import NSGA2
@@ -32,7 +33,7 @@ np.random.seed(42)
 ASSUMPTIONS = {
     "T0": 308.0,           # K (35 °C ambient)
     "Te": 278.0,           # K (5 °C evaporator)  <-- CONSTANT
-    "Tc": 313.0,           # K (40 °C condenser)
+    "Tc": 313.0,           # K (40 °C condenser),
 
     "G":  700.0,           # W/m^2 solar irradiance
     "eta_pv": 0.20,        # PV efficiency
@@ -267,6 +268,134 @@ ann.fit(Xtr_s, Ytr_s)
 Yhat_te = yscaler.inverse_transform(ann.predict(Xte_s))
 r2 = r2_score(Y_te, Yhat_te, multioutput="raw_values")
 print("[ANN] R^2 on test set [Qe, COP] =", np.round(r2, 4))
+
+# ================================================================
+# EXTRA DIAGNOSTIC 1: Parity plots (test set)
+# ================================================================
+plt.figure(figsize=(10,4))
+plt.suptitle("ANN Emulator – Parity Plots (Test Set)", y=1.02)
+
+# Qe parity
+ax1 = plt.subplot(1,2,1)
+ax1.scatter(Y_te[:,0], Yhat_te[:,0], s=10, alpha=0.6, edgecolors="none")
+qe_min = min(Y_te[:,0].min(), Yhat_te[:,0].min())
+qe_max = max(Y_te[:,0].max(), Yhat_te[:,0].max())
+ax1.plot([qe_min, qe_max], [qe_min, qe_max], "k--", linewidth=1)
+ax1.set_xlabel("Qe (PHYS) [W]")
+ax1.set_ylabel("Qe (ANN) [W]")
+ax1.set_title(f"Qe parity (R² = {r2[0]:.4f})")
+ax1.grid(True, linestyle="--", alpha=0.5)
+
+# COP parity
+ax2 = plt.subplot(1,2,2)
+ax2.scatter(Y_te[:,1], Yhat_te[:,1], s=10, alpha=0.6, edgecolors="none")
+cop_min = min(Y_te[:,1].min(), Yhat_te[:,1].min())
+cop_max = max(Y_te[:,1].max(), Yhat_te[:,1].max())
+ax2.plot([cop_min, cop_max], [cop_min, cop_max], "k--", linewidth=1)
+ax2.set_xlabel("COP (PHYS) [-]")
+ax2.set_ylabel("COP (ANN) [-]")
+ax2.set_title(f"COP parity (R² = {r2[1]:.4f})")
+ax2.grid(True, linestyle="--", alpha=0.5)
+
+plt.tight_layout()
+plt.show()
+
+# ================================================================
+# EXTRA DIAGNOSTIC 2: Residuals (test set)
+# ================================================================
+err_qe  = Yhat_te[:,0] - Y_te[:,0]
+err_cop = Yhat_te[:,1] - Y_te[:,1]
+
+rmse_qe  = np.sqrt(mean_squared_error(Y_te[:,0], Yhat_te[:,0]))
+rmse_cop = np.sqrt(mean_squared_error(Y_te[:,1], Yhat_te[:,1]))
+
+print(f"[ANN] RMSE on test set  Qe: {rmse_qe:.3f} W | COP: {rmse_cop:.5f}")
+
+# Histograms of residuals
+fig, axs = plt.subplots(1, 2, figsize=(10,4))
+axs[0].hist(err_qe, bins=40, alpha=0.8)
+axs[0].axvline(0.0, color="k", linestyle="--", linewidth=1)
+axs[0].set_xlabel("Error in Qe (ANN - PHYS) [W]")
+axs[0].set_ylabel("Count")
+axs[0].set_title("Qe residual histogram")
+axs[0].grid(True, linestyle="--", alpha=0.5)
+
+axs[1].hist(err_cop, bins=40, alpha=0.8)
+axs[1].axvline(0.0, color="k", linestyle="--", linewidth=1)
+axs[1].set_xlabel("Error in COP (ANN - PHYS) [-]")
+axs[1].set_ylabel("Count")
+axs[1].set_title("COP residual histogram")
+axs[1].grid(True, linestyle="--", alpha=0.5)
+
+plt.tight_layout()
+plt.show()
+
+# Residuals vs prediction (to check for bias)
+fig, axs = plt.subplots(1, 2, figsize=(10,4))
+
+axs[0].scatter(Yhat_te[:,0], err_qe, s=10, alpha=0.6, edgecolors="none")
+axs[0].axhline(0.0, color="k", linestyle="--", linewidth=1)
+axs[0].set_xlabel("Qe (ANN) [W]")
+axs[0].set_ylabel("Error Qe (ANN - PHYS) [W]")
+axs[0].set_title("Qe residuals vs ANN prediction")
+axs[0].grid(True, linestyle="--", alpha=0.5)
+
+axs[1].scatter(Yhat_te[:,1], err_cop, s=10, alpha=0.6, edgecolors="none")
+axs[1].axhline(0.0, color="k", linestyle="--", linewidth=1)
+axs[1].set_xlabel("COP (ANN) [-]")
+axs[1].set_ylabel("Error COP (ANN - PHYS) [-]")
+axs[1].set_title("COP residuals vs ANN prediction")
+axs[1].grid(True, linestyle="--", alpha=0.5)
+
+plt.tight_layout()
+plt.show()
+
+# ================================================================
+# 2.2) EXTRA SECTION: ANN VALIDATION – MSE vs EPOCH (OVERFITTING CHECK)
+#      (This does NOT change the trained emulator used later; it only
+#       trains a separate monitoring MLP to generate diagnostic curves.)
+# ================================================================
+print("\n[ANN] Generating MSE vs. epoch curves for overfitting check...")
+
+# We train a separate MLPRegressor with the same architecture as `base`,
+# but with warm_start so we can log MSE epoch-by-epoch.
+monitor_mlp = MLPRegressor(hidden_layer_sizes=base.hidden_layer_sizes,
+                           activation=base.activation,
+                           alpha=base.alpha,
+                           learning_rate_init=base.learning_rate_init,
+                           max_iter=1,           # one epoch per .fit call
+                           warm_start=True,
+                           random_state=base.random_state)
+
+n_epochs = 80  # purely for diagnostics; does not affect the main ANN model
+train_mse = []
+val_mse   = []
+
+for epoch in range(n_epochs):
+    monitor_mlp.fit(Xtr_s, Ytr_s)
+    Ytr_pred_s = monitor_mlp.predict(Xtr_s)
+    Yte_pred_s = monitor_mlp.predict(Xte_s)
+
+    # Back-transform to physical units for MSE
+    Ytr_pred = yscaler.inverse_transform(Ytr_pred_s)
+    Yte_pred = yscaler.inverse_transform(Yte_pred_s)
+
+    tr_mse = mean_squared_error(Y_tr, Ytr_pred)
+    te_mse = mean_squared_error(Y_te, Yte_pred)
+
+    train_mse.append(tr_mse)
+    val_mse.append(te_mse)
+
+plt.figure(figsize=(7,5))
+plt.plot(range(1, n_epochs+1), train_mse, label="Train MSE")
+plt.plot(range(1, n_epochs+1), val_mse, label="Test/Validation MSE")
+plt.xlabel("Epoch")
+plt.ylabel("MSE")
+plt.title("ANN Emulator – MSE vs Epoch (Overfitting Check)")
+plt.grid(True, linestyle="--", alpha=0.5)
+plt.legend()
+plt.tight_layout()
+plt.show()
 
 # ================================================================
 # 3) ANN evaluator (emulator) + derived physics-consistent outputs
