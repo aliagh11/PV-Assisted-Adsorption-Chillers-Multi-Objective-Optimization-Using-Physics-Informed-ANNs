@@ -34,7 +34,7 @@ ASSUMPTIONS = {
     "Te": 278.0,           # K (5 °C evaporator)  <-- CONSTANT
     "Tc": 313.0,           # K (40 °C condenser)
 
-    "G":  900.0,           # W/m^2 solar irradiance
+    "G":  700.0,           # W/m^2 solar irradiance
     "eta_pv": 0.20,        # PV efficiency
 
     "L_cool_req": 5000.0,  # W average cycle cooling load to meet

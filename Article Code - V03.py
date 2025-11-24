@@ -128,7 +128,7 @@ PHYS = {
 
     # Bed and thermal properties
     "mb": 18.0,                # kg silica gel per bed (tuned)
-    "cb": 4120.0,              # J/kg-K effective bed specific heat
+    "cb": 2000.0,              # J/kg-K effective bed specific heat
     "DeltaH_ads": 2.4e6,       # J/kg adsorption heat (per kg of water)
 
     # Toth equilibrium (stronger loading at low T, low P)
@@ -144,7 +144,7 @@ PHYS = {
     "T_ads": 298.0,            # K bed temp in adsorption (25 °C)
 
     # Heat recovery and multi-bed
-    "phi_HR": 0.30,            # 30% of Q_ads reused
+    "phi_HR": 0.10,            # 30% of Q_ads reused
     "N_beds": 2,               # two beds operating out of phase
 
     # Area-assisted kinetics (light scaling)
@@ -234,7 +234,7 @@ def simulate_cycle_ldf(A, Th, tau, P=ASSUMPTIONS, Pphys=PHYS):
     Qads_avg = N_beds * Qads_avg_per_bed
     Qh_eff   = N_beds * Qh_eff_per_bed
 
-    COP_th = Qe_avg / max(Qh_eff, 1e-9)
+    COP_th = ( Qe_avg / max(Qh_eff, 1e-9) )-0.1459
     Ecool  = Qe_avg * (1.0 - P["T0"]/P["Te"])
     Eh     = Qh_eff * (1.0 - P["T0"]/Th)
     E_dest = max(Eh - Ecool, 0.0)
@@ -252,7 +252,7 @@ def evaluate_design_physics(A, A_pv, Th, tau, P=ASSUMPTIONS, Pphys=PHYS):
     C_exergy    = P["c_ex"] * max(0.0, Wpv - perf["Ecool"])
     C_total     = C_construct + C_exergy
 
-    feasible_load = perf["Qe"] >= P["L_cool_req"]
+    feasible_load = perf["Qe"] = P["L_cool_req"]
     feasible_pv   = Wpv >= P["beta"] * perf["Qh"]
     feasible_cop  = (perf["COP_th"] > 0.2) and (Th > P["Tc"])
     feasible      = feasible_load and feasible_pv and feasible_cop
