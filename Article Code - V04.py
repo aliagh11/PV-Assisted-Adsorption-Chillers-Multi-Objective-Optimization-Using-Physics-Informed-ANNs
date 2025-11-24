@@ -35,8 +35,8 @@ ASSUMPTIONS = {
     "Te": 278.0,           # K (5 °C evaporator)  <-- CONSTANT
     "Tc": 313.0,           # K (40 °C condenser),
 
-    "G":  700.0,           # W/m^2 solar irradiance
-    "eta_pv": 0.20,        # PV efficiency
+    "G":  800.0,           # W/m^2 solar irradiance
+    "eta_pv": 0.22,        # PV efficiency
 
     "L_cool_req": 5000.0,  # W average cycle cooling load to meet
     "beta": 0.25,          # PV must cover beta * Qh
@@ -53,7 +53,7 @@ ASSUMPTIONS = {
 BOUNDS = {
     "A":   (0.8, 12.0),   # m^2 adsorber area
     "A_pv":(4.0, 30.0),   # m^2 PV area
-    "T_h": (355.0, 368.0),# K regeneration temp (82C - 95C)
+    "T_h": (360.0, 368.0),# K regeneration temp (82C - 95C)
     "tau": (100.0, 700)   # s cycle time
 }
 
@@ -73,7 +73,7 @@ PHYS = {
     "T_ads": 298.0,
 
     # Heat recovery and parallel beds
-    "phi_HR": 0.30, "N_beds": 2,
+    "phi_HR": 0.20, "N_beds": 2,
 
     # Light area scaling on kinetics
     "A_ref": 4.0, "alpha_k": 0.05
