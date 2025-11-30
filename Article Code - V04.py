@@ -252,13 +252,13 @@ yscaler = StandardScaler().fit(Y_tr)
 Xtr_s, Xte_s = xscaler.transform(X_tr), xscaler.transform(X_te)
 Ytr_s, Yte_s = yscaler.transform(Y_tr), yscaler.transform(Y_te)
 
-base = MLPRegressor(hidden_layer_sizes=(20,20),
+base = MLPRegressor(hidden_layer_sizes=(10,10),
                     activation="relu",
-                    alpha=1e-4,
-                    learning_rate_init=3e-3,
+                    alpha=1e-3,
+                    learning_rate_init=0.1,
                     max_iter=800,
                     early_stopping=True,
-                    validation_fraction=0.1,
+                    validation_fraction=0.2,
                     random_state=42)
 ann = MultiOutputRegressor(base)
 
