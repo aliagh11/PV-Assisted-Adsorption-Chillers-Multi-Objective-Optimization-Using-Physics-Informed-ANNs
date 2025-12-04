@@ -444,58 +444,34 @@ merged_df.to_csv("merged_df.csv", index=False)
 plot_convergence(cb)
 
 # ====================== FINAL SURROGATE SUMMARY ============================
+# ================================================================
+# 7) Extract FULL Pareto front (as seen in Python plot)
+#    Save to CSV and Excel
+# ================================================================
+
 from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 
-feas_only = pop_df[pop_df["feasible"]].copy()
-if len(feas_only) == 0:
-    raise RuntimeError("No feasible designs found in the surrogate run.")
+print("\n=== Extracting FULL Pareto Front (all nondominated points) ===")
 
-Fmat = feas_only[["C_total","E_dest"]].values
-I = NonDominatedSorting().do(Fmat, only_non_dominated_front=True)
-front = feas_only.iloc[I].copy().sort_values(["C_total","E_dest"]).reset_index(drop=True)
+# Use ALL points (feasible and infeasible)
+Fmat_all = pop_df[["C_total", "E_dest"]].values
 
-min_cost = front.nsmallest(1, "C_total").iloc[0]
-min_ex   = front.nsmallest(1, "E_dest").iloc[0]
+# Get indices of nondominated (Pareto-optimal) points
+I_all = NonDominatedSorting().do(Fmat_all, only_non_dominated_front=True)
 
-def _knee_point(front_df):
-    if len(front_df) <= 2:
-        return front_df.iloc[0]
-    p0 = front_df.iloc[0][["C_total","E_dest"]].values
-    p1 = front_df.iloc[-1][["C_total","E_dest"]].values
-    v = p1 - p0
-    v_norm = np.linalg.norm(v)
-    if v_norm == 0:
-        return front_df.iloc[0]
-    pts = front_df[["C_total","E_dest"]].values
-    d = np.abs(np.cross(v, pts - p0)) / v_norm
-    return front_df.iloc[int(np.argmax(d))]
+# Extract the Pareto front
+pareto_front = pop_df.iloc[I_all].copy().sort_values(["C_total", "E_dest"]).reset_index(drop=True)
 
-knee = _knee_point(front)
+# Save to CSV
+pareto_front.to_csv("surrogate_pareto_front.csv", index=False)
 
-def _fmt_row(row):
-    return {
-        "A [m^2]":     round(float(row["A"]), 3),
-        "A_pv [m^2]":  round(float(row["A_pv"]), 3),
-        "T_h [K]":     round(float(row["T_h"]), 2),
-        "tau [s]":     round(float(row["tau"]), 1),
-        "C_total [$]": round(float(row["C_total"]), 2),
-        "E_dest [W]":  round(float(row["E_dest"]), 6),
-        "Qe [W]":      round(float(row["Qe"]), 2),
-        "Qh [W]":      round(float(row["Qh"]), 2),
-        "COP_th [-]":  round(float(row["COP_th"]), 4),
-        "Wpv [W]":     round(float(row["Wpv"]), 2)
-    }
+# Save to Excel
+pareto_front.to_excel("surrogate_pareto_front.xlsx", index=False)
 
-summary_table = pd.DataFrame([
-    _fmt_row(min_cost),
-    _fmt_row(min_ex),
-    _fmt_row(knee),
-], index=["Min Cost", "Min Exergy", "Knee (Compromise)"])
+print(f"Pareto points saved: {len(pareto_front)}")
+print("Files created:")
+print("  - surrogate_pareto_front.csv")
+print("  - surrogate_pareto_front.xlsx")
 
-print("\n=== SURROGATE MODEL — OPTIMAL DESIGNS ===")
-print(f"Feasible points: {len(feas_only)} | Pareto points: {len(front)}")
-print(summary_table.to_string())
-
-front.to_csv("surrogate_pareto_front.csv", index=True)
-print("\nSaved: surrogate_pareto_front.csv")
-# ==================== END FINAL SURROGATE SUMMARY ==========================
+print("\nPreview of saved Pareto front:")
+print(pareto_front.head(10).to_string(index=False))
