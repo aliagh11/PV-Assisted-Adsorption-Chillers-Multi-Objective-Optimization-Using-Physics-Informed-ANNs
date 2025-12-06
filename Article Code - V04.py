@@ -306,6 +306,42 @@ plt.show()
 err_qe  = Yhat_te[:,0] - Y_te[:,0]
 err_cop = Yhat_te[:,1] - Y_te[:,1]
 
+# ---------- NEW: Save data for LaTeX/Excel plotting (Figs. 5a–7b) ----------
+# Fig. 5a – Qe parity (PHYS vs ANN)
+pd.DataFrame({
+    "Qe_PHYS_W": Y_te[:, 0],
+    "Qe_ANN_W":  Yhat_te[:, 0]
+}).to_excel("Fig5a.xlsx", index=False)
+
+# Fig. 5b – COP parity (PHYS vs ANN)
+pd.DataFrame({
+    "COP_PHYS": Y_te[:, 1],
+    "COP_ANN":  Yhat_te[:, 1]
+}).to_excel("Fig5b.xlsx", index=False)
+
+# Fig. 6a – Qe residual histogram
+pd.DataFrame({
+    "Err_Qe_W": err_qe
+}).to_excel("Fig6a.xlsx", index=False)
+
+# Fig. 6b – COP residual histogram
+pd.DataFrame({
+    "Err_COP": err_cop
+}).to_excel("Fig6b.xlsx", index=False)
+
+# Fig. 7a – Qe residuals vs ANN prediction
+pd.DataFrame({
+    "Qe_ANN_W": Yhat_te[:, 0],
+    "Err_Qe_W": err_qe
+}).to_excel("Fig7a.xlsx", index=False)
+
+# Fig. 7b – COP residuals vs ANN prediction
+pd.DataFrame({
+    "COP_ANN": Yhat_te[:, 1],
+    "Err_COP": err_cop
+}).to_excel("Fig7b.xlsx", index=False)
+# -----------------------------------------------------------------
+
 rmse_qe  = np.sqrt(mean_squared_error(Y_te[:,0], Yhat_te[:,0]))
 rmse_cop = np.sqrt(mean_squared_error(Y_te[:,1], Yhat_te[:,1]))
 
